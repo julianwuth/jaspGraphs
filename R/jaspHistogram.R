@@ -70,7 +70,7 @@ jaspHistogram <- function(
   h <- graphics::hist(x, plot = FALSE, breaks = binWidthType)
   xBreaks <- getPrettyAxisBreaks(c(x, h[["breaks"]]), min.n = 3)
 
-  histogramGeom <- scaleFill <- maxCounts <- maxDensity <- NULL
+  histogramGeom <- scaleFill <- NULL
   if (histogram) {
     if (hasGroupingVariable) {
 
@@ -90,20 +90,6 @@ jaspHistogram <- function(
         position  = histogramPosition
       )
 
-      if (identical(histogramPosition, "stack") || inherits(histogramPosition, "PositionStack")) {
-        # for a stacked figure we base maxCounts and maxDensity on the ungrouped data
-        maxCounts  <- h[["counts"]]
-        maxDensity <- h[["density"]]
-      } else {
-        # for each groupingvariable, bin by breaks and find the largest count
-        temp <- do.call(rbind, tapply(x, groupingVariable, function(subset) {
-          h <- graphics::hist(subset, plot = FALSE, breaks = binWidthType)
-          c(counts = max(h[["counts"]]), density = max(h[["density"]]))
-        }))
-        maxCounts  <- max(temp[, "counts"])
-        maxDensity <- max(temp[, "density"])
-      }
-
     } else {
       dataHistogram <- data.frame(x = x)
       aesHistogram <- if (density) {
@@ -119,10 +105,7 @@ jaspHistogram <- function(
         col       = "black",
         linewidth = .7
       )
-      scaleFill <-  NULL
-
-      maxCounts  <- max(h[["counts"]])
-      maxDensity <- max(h[["density"]])
+      scaleFill <- NULL
     }
   }
 
@@ -179,14 +162,9 @@ jaspHistogram <- function(
 
     }
 
-    yhigh <- max(maxDensity, max(densDf[["y"]]))
-    yBreaks <- getPrettyAxisBreaks(c(0, 1.05 * yhigh))
-
   } else {
 
-    yhigh   <- maxCounts
-    yBreaks <- getPrettyAxisBreaks(c(0, yhigh))
-    yName   <- gettext("Counts")
+    yName <- gettext("Counts")
 
   }
 
@@ -209,8 +187,8 @@ jaspHistogram <- function(
     densityShadedAreaGeom +
     densityLineGeom +
     rugGeom +
-    ggplot2::scale_x_continuous(name = xName, breaks = xBreaks, limits = range(xBreaks)) +
-    ggplot2::scale_y_continuous(name = yName, breaks = yBreaks, limits = range(yBreaks)) +
+    scale_x_continuous(name = xName, breaks = xBreaks, limits = range(xBreaks)) +
+    scale_y_continuous(name = yName) +
     scaleFill +
     scaleColor +
     geom_rangeframe() +
